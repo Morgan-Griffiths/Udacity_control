@@ -2,4 +2,4 @@
 *.ipynb_checkpoints/
 *.pyc
 *.vscode
-*/Environments
+*.Environments/
