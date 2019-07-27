@@ -4,3 +4,6 @@
 *.vscode
 *.Environments/
 Environments/
+ml-agents/
+torch_environment.yml
+unity-environment.log

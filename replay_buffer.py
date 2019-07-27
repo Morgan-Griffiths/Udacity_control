@@ -12,18 +12,20 @@ class ReplayBuffer(object):
         self.batch_size = batch_size
         self.experience = namedtuple('experience',field_names=['state','action','reward','next_state','done'])
         self.memory = deque(maxlen=buffer_size)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print('buffer device',self.device)
     
     def sample(self):
         experiences = random.sample(self.memory,self.batch_size)
         
-        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device)
-        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).float().to(device)
-        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device)
-        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(device)
-        dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None])).float().to(device)
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(self.device)
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).float().to(self.device)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(self.device)
+        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(self.device)
+        # convert dones to uint from bools
+        dones = torch.from_numpy(np.vstack([np.array(e.done,dtype=np.uint8) for e in experiences if e is not None])).float().to(self.device)
         
         return (states,actions,rewards,next_states,dones)
-            
     
     def add(self,state,action,reward,next_state,done):
 #         print('action',action)

@@ -1,8 +1,11 @@
-from unityagents import UnityEnvironment
+
+from unity_env import UnityEnv
 import numpy as np
 
 from ddpg import DDPG
+from ppo import PPO
 from train_one import train
+from plot import plot
 
 BUFFER_SIZE = 10000
 MIN_BUFFER_SIZE = 200
@@ -15,38 +18,36 @@ ALR = 0.0001
 EPSILON = 1
 MIN_EPSILON = 0.01
 GAMMA = 0.99
-TAU = 0.001
+TAU = 0.1
 L2 = 0.01
 N_STEP = 0.95
 UPDATE_EVERY = 4
 CLIP_NORM = 10
     
-def main():
+def main(*args):
     seed = 7
-    env = UnityEnvironment(file_name='/Users/morgan/Code/deep-reinforcement-learning/p2_continuous-control/Reacher.app')
-    # get the default brain
-    brain_name = env.brain_names[0]
-    brain = env.brains[brain_name]
-    # reset the environment
-    env_info = env.reset(train_mode=True)[brain_name]
+    env = UnityEnv(env_file='Environments/Reacher_Linux_one/Reacher.x86_64',no_graphics=True)
 
     # number of agents
-    num_agents = len(env_info.agents)
+    num_agents = env.num_agents
     print('Number of agents:', num_agents)
 
     # size of each action
-    action_size = brain.vector_action_space_size
-    print('Size of each action:', action_size)
+    action_size = env.action_size
 
     # examine the state space 
-    states = env_info.vector_observations
-    state_size = states.shape[1]
-    print('There are {} agents. Each observes a state with length: {}'.format(states.shape[0], state_size))
-    print('The state for the first agent looks like:', states[0])
+    state_size = env.state_size
+    print('Size of each action: {}, Size of the state space {}'.format(action_size,state_size))
     
-    agent = DDPG(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
+    if args[0] == "DDPG":
+        agent = DDPG(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
+    else:
+        agent = PPO(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
+
     scores = train(agent,env,UPDATE_EVERY)
     return scores
 
 if __name__ == "__main__":
     scores = main()
+    plot('DDPG',scores)
+    

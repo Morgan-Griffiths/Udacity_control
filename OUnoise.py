@@ -11,7 +11,7 @@ def initialize_N(T):
     theta = 0.15
     sigma = 0.2
     mu = 0
-    tau = 2
+    tau = 0.5
     dt = 1
     n = int(T / dt)
     
