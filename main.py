@@ -23,6 +23,9 @@ L2 = 0.01
 N_STEP = 0.95
 UPDATE_EVERY = 4
 CLIP_NORM = 10
+discount_rate = .995
+ppo_epsilon = 0.1
+ppo_beta = .01
     
 def main(*args):
     seed = 7

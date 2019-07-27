@@ -7,8 +7,9 @@ from unity_env import UnityEnv
 import torch.optim as optim
 
 class PPO(object):
-    def __init__(self,nA,nS,batch_size,seed,discount = 0.995, epsilon=0.1, beta=0.01,gamma=1.0,n_step=0.95):
+    def __init__(self,env,nA,nS,batch_size,seed,tmax = 700,discount = 0.995, epsilon=0.1, beta=0.01,gamma=1.0,n_step=0.95):
         self.seed = seed
+        self.env = env
         self.nA = nA
         self.nS = nS
         self.batch_size = batch_size
@@ -17,6 +18,7 @@ class PPO(object):
         self.discount = discount
         self.start_epsilon = self.epsilon = epsilon
         self.start_beta = self.beta = beta
+
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -28,7 +30,7 @@ class PPO(object):
         policy_input = torch.tensor(states,dtype=torch.float32)
         return policy(policy_input)
 
-    def collect_trajectories(self,env,policy,tmax):
+    def collect_trajectories(self,env,policy):
         rewards = []
         dones = []
         states = []
@@ -36,7 +38,7 @@ class PPO(object):
         a_probs = []
     #     state,env = initialize_env(env)
         state = env.reset()
-        for t in range(tmax):
+        for t in range(self.tmax):
             probs = policy(state).cpu().detach().numpy()[0]
             action = np.random.choice([0,1],p=probs)
             state,reward,done,_ = env.step(action)

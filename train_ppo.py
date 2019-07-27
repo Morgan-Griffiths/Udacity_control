@@ -1,19 +1,14 @@
+import numpy as np
+
 # Single agent
-def train(env,policy,optimizer,episodes,discount,epsilon,beta,tmax,SGD_epoch):
+def train(env,agent,episodes,discount,epsilon,beta,tmax,SGD_epoch):
     total_rewards = []
     for i_episode in range(1,episodes+1):
         # get trajectories
-        actions,a_probs,states,rewards,dones = collect_trajectories(env,policy,tmax)
+        actions,a_probs,states,rewards,dones = agent.collect_trajectories(env,policy,tmax)
         for _ in range(SGD_epoch):
             # Surrogate
-            L = clipped_surrogate(policy,a_probs,states,actions,rewards,discount,epsilon,beta)
-
-            optimizer.zero_grad()
-            # for batch loss
-#             print('L',L)
-            L.backward()
-            optimizer.step()
-            del L
+            agent.step(a_probs,states,actions,rewards,discount,epsilon,beta)
         
         # the clipping parameter reduces as time goes on
         epsilon*=.999
