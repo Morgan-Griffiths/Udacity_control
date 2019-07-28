@@ -2,8 +2,9 @@
 from unity_env import UnityEnv
 import numpy as np
 
-from ddpg import DDPG
-from ppo import PPO
+from Agents.ddpg import DDPG
+from Agents.ppo import PPO
+from Agents.reinforce import REINFORCE
 from train_one import train
 from plot import plot
 
@@ -27,7 +28,7 @@ discount_rate = .995
 ppo_epsilon = 0.1
 ppo_beta = .01
     
-def main(*args):
+def main(algo):
     seed = 7
     env = UnityEnv(env_file='Environments/Reacher_Linux_one/Reacher.x86_64',no_graphics=True)
 
@@ -42,15 +43,19 @@ def main(*args):
     state_size = env.state_size
     print('Size of each action: {}, Size of the state space {}'.format(action_size,state_size))
     
-    if args[0] == "DDPG":
+    if algo == "DDPG":
         agent = DDPG(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
+        scores = train(agent,env,UPDATE_EVERY)
+    elif algo == 'PPO':
+        agent = PPO(env,action_size,state_size,seed)
+        scores = agent.train()
     else:
-        agent = PPO(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
-
-    scores = train(agent,env,UPDATE_EVERY)
+        agent = REINFORCE(env,action_size,state_size,seed)
+        scores = agent.train()
     return scores
 
 if __name__ == "__main__":
-    scores = main()
-    plot('DDPG',scores)
+    algo = 'PPO'
+    scores = main(algo)
+    plot(algo,scores)
     

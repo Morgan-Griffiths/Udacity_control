@@ -3,7 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class Policy(nn.Module):
+"""
+TODO: Make a continuous space Reinforce policy, where we output a gaussian and calculate the probs based on the mu and sigma.
+"""
+class ReinforcePolicy(nn.Module):
     def __init__(self,seed,nS,nA,hidden_dims=(64,64)):
         super(Policy,self).__init__()
         self.seed = torch.manual_seed(seed)
@@ -11,6 +14,7 @@ class Policy(nn.Module):
         self.nA = nA
         self.nS = nS
         self.size = hidden_dims[-1] * hidden_dims[-2]
+        self.std = nn.Parameter(torch.zeros(1, nA))
         
         self.input_layer = nn.Linear(nS,hidden_dims[0])
         self.hidden_layers = nn.ModuleList()
@@ -19,7 +23,37 @@ class Policy(nn.Module):
             self.hidden_layers.append(hidden_layer)
         self.output_layer = nn.Linear(hidden_dims[-1],nA)
             
-    def forward(self,state):
+    def forward(self,state,action=None):
+        x = state
+        if not isinstance(state,torch.Tensor):
+            x = torch.tensor(x,dtype=torch.float32) #device = self.device,
+            x = x.unsqueeze(0)
+        mean = torch.tanh(self.output_layer(x))
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).detach()
+        return action, log_prob, dist.entropy()
+
+# PPO
+class Policy(nn.Module):
+    def __init__(self,seed,nS,nA,hidden_dims=(64,64)):
+        super(Policy,self).__init__()
+        self.seed = torch.manual_seed(seed)
+        self.hidden_dims = hidden_dims
+        self.nA = nA
+        self.nS = nS
+        self.size = hidden_dims[-1] * hidden_dims[-2]
+        self.std = nn.Parameter(torch.zeros(1, nA))
+        
+        self.input_layer = nn.Linear(nS,hidden_dims[0])
+        self.hidden_layers = nn.ModuleList()
+        for i in range(1,len(self.hidden_dims)):
+            hidden_layer = nn.Linear(hidden_dims[i-1],hidden_dims[i])
+            self.hidden_layers.append(hidden_layer)
+        self.output_layer = nn.Linear(hidden_dims[-1],nA)
+            
+    def forward(self,state,action=None):
         x = state
         if not isinstance(state,torch.Tensor):
             x = torch.tensor(x,dtype=torch.float32) #device = self.device,
@@ -27,9 +61,13 @@ class Policy(nn.Module):
         x = F.relu(self.input_layer(x))
         for hidden_layer in self.hidden_layers:
             x = F.relu(hidden_layer(x))
-        # flatten the tensor
-#         x = x.view(-1,self.size)
-        return F.tanh(self.output_layer(x),dim=1)
+
+        mean = torch.tanh(self.output_layer(x))
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action)
+        return action, log_prob#, dist.entropy()
     
     # Return the action along with the probability of the action. For weighting the reward garnered by the action.
     def act(self,state):
@@ -41,7 +79,7 @@ class Policy(nn.Module):
         return action.item(),m.log_prob(action)
 
 class Critic(nn.Module):
-    def __init__(self,seed,nS,nA,hidden_dims=(100,100)):
+    def __init__(self,seed,nS,nA,hidden_dims=(400,300)):
         super(Critic,self).__init__()
         self.seed = torch.manual_seed(seed)
         self.nS = nS

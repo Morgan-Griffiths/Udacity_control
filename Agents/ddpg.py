@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 from replay_buffer import ReplayBuffer
 from models import Critic,Actor
@@ -47,18 +48,22 @@ class DDPG(object):
         Q_targets = self.target_critic(states,target_actions)
     
         # GAE rewards
-        GAE_rewards = torch.tensor(self.GAE(rewards.cpu().numpy()))
+        # GAE_rewards = torch.tensor(self.GAE(rewards.cpu().numpy()))
         target_y = GAE_rewards + (self.gamma*Q_targets*(1-dones))
+        # target_y = rewards + (self.gamma*Q_targets*(1-dones))
         
+
         # update critic
         current_y = self.local_critic(states,actions)
-        L = 1/self.batch_size * sum(target_y - current_y)**2
+        # L = (sum(target_y - current_y)/self.batch_size)**2
+        L = F.mse_loss(target_y, current_y)
         self.critic_optimizer.zero_grad()
         L.backward()
         self.critic_optimizer.step()
         # update actor
         local_actions = self.local_actor(states)
-        J = 1/self.batch_size * sum(self.local_critic(states,local_actions))
+        # J = -(sum(self.local_critic(states,local_actions)) / self.batch_size)
+        J = -self.local_critic(states, local_actions).mean()
         self.actor_optimizer.zero_grad()
         J.backward()
         self.actor_optimizer.step()
