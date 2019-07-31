@@ -5,7 +5,7 @@ import numpy as np
 from Agents.ddpg import DDPG
 from Agents.ppo import PPO
 from Agents.reinforce import REINFORCE
-from train_one import train
+from train_ppo import train
 from plot import plot
 
 BUFFER_SIZE = 10000
@@ -19,7 +19,7 @@ ALR = 0.0001
 EPSILON = 1
 MIN_EPSILON = 0.01
 GAMMA = 0.99
-TAU = 0.1
+TAU = 0.001
 L2 = 0.01
 N_STEP = 0.95
 UPDATE_EVERY = 4
@@ -27,10 +27,13 @@ CLIP_NORM = 10
 discount_rate = .995
 ppo_epsilon = 0.1
 ppo_beta = .01
+EPISODES = 1000
     
 def main(algo):
     seed = 7
-    env = UnityEnv(env_file='Environments/Reacher_Linux_one/Reacher.x86_64',no_graphics=True)
+    # Load the ENV
+    # env = UnityEnv(env_file='Environments/Reacher_Linux_one/Reacher.x86_64',no_graphics=True)
+    env = UnityEnv(env_file='Environments/Reacher_Linux_20/Reacher.x86_64',no_graphics=True)
 
     # number of agents
     num_agents = env.num_agents
@@ -48,7 +51,7 @@ def main(algo):
         scores = train(agent,env,UPDATE_EVERY)
     elif algo == 'PPO':
         agent = PPO(env,action_size,state_size,seed)
-        scores = agent.train()
+        scores = train(agent,EPISODES)
     else:
         agent = REINFORCE(env,action_size,state_size,seed)
         scores = agent.train()
