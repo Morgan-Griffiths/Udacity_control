@@ -1,25 +1,26 @@
 import numpy as np
+from collections import deque
 
-# Single agent
-def train(env,agent,episodes,discount,epsilon,beta,tmax,SGD_epoch):
-    total_rewards = []
-    for i_episode in range(1,episodes+1):
-        # get trajectories
-        actions,a_probs,states,rewards,dones = agent.collect_trajectories(env,policy,tmax)
-        for _ in range(SGD_epoch):
-            # Surrogate
-            agent.step(a_probs,states,actions,rewards,discount,epsilon,beta)
-        
-        # the clipping parameter reduces as time goes on
-        epsilon*=.999
+from plot import plot
 
-        # the regulation term also reduces
-        # this reduces exploration in later runs
-        beta*=.995
+def train(agent,episodes):
+    total_rewards = deque(maxlen=100)
+    for i_episode in range(1,episodes):#,episodes+1):
+        for _ in range(100):
+            # get trajectories
+            rewards = agent.step()
+            # get the average reward of the parallel environments
+            total_rewards.append((np.mean(rewards),min(rewards),max(rewards)))
 
-        # get the average reward of the parallel environments
-        total_rewards.append(sum(rewards))
-
-        # display some progress every 20 iterations
-        if i_episode % 50 == 0:
-            print("Episode: {0:d}, score: {1:f}".format(i_episode,total_rewards[-1]))
+        r_mean,r_min,r_max = total_rewards[-1]
+        print("\rEpisode: {}, Number of steps {} \tScores: mean {:.2f}, min {:.2f}, max {:.2f}".format(i_episode,int(i_episode*agent.batch_size),r_mean,r_min,r_max),end="")
+        if r_mean > 30:
+            print('Env solved!')
+            # save plot of rewards
+            plot(total_rewards)
+            # save policy
+            directory = os.path.dirname(path)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+            torch.save(agent.policy.state_dict(), 'model_checkpoints/ppo.ckpt')
+    return total_rewards
