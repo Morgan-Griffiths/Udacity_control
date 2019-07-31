@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from collections import deque
 
-from models import Policy 
+from Networks.models import Policy 
 
 class REINFORCE(object):
     def __init__(self,env,nA,nS,seed,episodes=1000,tmax = 700,discount = 0.995, epsilon=0.1, beta=0.01,gamma=1.0,n_step=0.95):
