@@ -27,10 +27,12 @@ CLIP_NORM = 10
 discount_rate = .995
 ppo_epsilon = 0.1
 ppo_beta = .01
-EPISODES = 1000
+EPISODES = 4000
     
 def main(algo):
     seed = 7
+    path = 'model_checkpoints/ppo.ckpt'
+
     # Load the ENV
     # env = UnityEnv(env_file='Environments/Reacher_Linux_one/Reacher.x86_64',no_graphics=True)
     env = UnityEnv(env_file='Environments/Reacher_Linux_20/Reacher.x86_64',no_graphics=True)
@@ -51,7 +53,7 @@ def main(algo):
         scores = train(agent,env,UPDATE_EVERY)
     elif algo == 'PPO':
         agent = PPO(env,action_size,state_size,seed)
-        scores = train(agent,EPISODES)
+        scores = train(agent,EPISODES,path)
     else:
         agent = REINFORCE(env,action_size,state_size,seed)
         scores = agent.train()
