@@ -4,17 +4,10 @@ Submission for completing the Udacity Project
 
 ## Implementation
 
-D4PG.
+PPO
 
-- Priority Replay
-- Double DQN
-- Dueling DQN
-- Polyak Averaging
-
-Contains the weights of the trained RL bot to solve the problem.
-Graphs indicating the progress of the agent and when it solved the problem.
-
-The DQN agent solved the enviroment in 625 steps (Average Reward > 13).
+- Generalized Advantage Estimation (GAE)
+- Network - shared torso, dual head.
 
 ## There are two Environments:
 
@@ -51,25 +44,6 @@ The environment is considered solved under the following conditions:
 - Benchmark Mean Reward for CrawlerDynamicTarget: 400
 
 
-## Project Layout
-
-### Agents
-
-DQN, Priority_DQN
-
-### Buffers
-
-Vanilla ReplayBuffer, PriorityReplayBuffer
-
-### Networks
-
-QNetwork, Dueling_QNetwork
-
-### Main files
-
-train.py
-checkpoint.pth
-
 ## Installation
 
 Clone the repository.
@@ -94,12 +68,6 @@ git -C ml-agents checkout 0.4.0b
 pip install ml-agents/python/.
 ```
 
-Install the project requirements.
-
-```
-pip install -r requirements.txt
-```
-
 ## Download the Reacher Unity Environment which matches your operating system
 
 - [Linux](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P2/Reacher/Reacher_Linux.zip)
@@ -117,16 +85,34 @@ pip install -r requirements.txt
 Place the environment into the Environments folder.
 If necessary, inside main.py, change the path to the unity environment appropriately
 
+
+## Project Layout
+
+### Agents
+
+PPO, The following are either unfinished or are in need of learning help (D4PG,DDPG,REINFORCE)
+
+### Buffers
+
+ReplayBuffer, PriorityReplayBuffer (Uses Priority tree)
+
+### Networks
+
+Policy (PPO), Actor/Critic (DDPG), ReinforcePolicy (REINFORCE)
+
+### Main files
+
+main.py
+checkpoint.pth
+
+
 ## Run the project
 
-Each project solution is contained within the notebooks "Navigation.ipynb" and "Navigation_Pixels.ipynb"
+Make sure the env path is set correctly in the main.py file and run
+```
+python main.py
+```
 
-Make sure the environment path is correctly set in the desired notebook. Then run the cells as wanted.
+## Watch a trained agent
 
-## Futher details
-
-The Vector Banana report.md is in the Vector_banana folder. Along with the performance graph and the weights.
-
-Additionally, i tried training visual banana from scratch but likely due to memory constraints it essentially broke in the notebook format. I expect i will be able to train effectively to outside of that. And in addition run some refresh to clear the cache every N epsidoes.
-
-[link](https://medium.com/@C5ipo7i/improving-dqn-cde578df5d73?postPublishedType=initial) A medium article describing the different add-ons i implemented to DQN
+load the model checkpoint from model_checkpoints
