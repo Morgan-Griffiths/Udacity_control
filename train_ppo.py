@@ -1,26 +1,41 @@
 import numpy as np
 from collections import deque
+import time
+import pickle
 
 from plot import plot
 
-def train(agent,episodes):
-    total_rewards = deque(maxlen=100)
+def train(agent,episodes,path):
+    tic = time.time()
+    scores = []
+    rewards_mean = deque(maxlen=10)
+    rewards_max = deque(maxlen=10)
+    rewards_min = deque(maxlen=10)
+    rewards_sum = deque(maxlen=10)
     for i_episode in range(1,episodes):#,episodes+1):
-        for _ in range(100):
-            # get trajectories
-            rewards = agent.step()
-            # get the average reward of the parallel environments
-            total_rewards.append((np.mean(rewards),min(rewards),max(rewards)))
+        # get trajectories
+        rewards = agent.step()
+        # get the average reward of the parallel environments
+        rewards_mean.append(np.mean(rewards))
+        rewards_max.append(min(rewards))
+        rewards_min.append(max(rewards))
+        rewards_sum.append(np.sum(rewards))
+        scores.append((np.sum(rewards),max(rewards),np.mean(rewards),min(rewards)))
 
-        r_mean,r_min,r_max = total_rewards[-1]
-        print("\rEpisode: {}, Number of steps {} \tScores: mean {:.2f}, min {:.2f}, max {:.2f}".format(i_episode,int(i_episode*agent.batch_size),r_mean,r_min,r_max),end="")
-        if r_mean > 30:
-            print('Env solved!')
-            # save plot of rewards
-            plot(total_rewards)
-            # save policy
-            directory = os.path.dirname(path)
-            if not os.path.exists(directory):
-                os.mkdir(directory)
-            torch.save(agent.policy.state_dict(), 'model_checkpoints/ppo.ckpt')
+        if i_episode % 10 == 0:
+            toc = time.time()
+            r_sum = np.mean(rewards_sum)
+            r_mean = np.mean(rewards_mean)
+            r_max = max(rewards_mean)
+            r_min = min(rewards_mean)
+            print("\rEpisode: {} out of {}, Steps {} Rewards: total {:.2f}, mean {:.2f}, min {:.2f}, max {:.2f}, Elapsed {:.2f}".format(i_episode,episodes,int(i_episode*agent.tmax*20),r_sum,r_mean,r_min,r_max,(toc-tic)/60))
+            if r_sum > 30:
+                print('Env solved!')
+                # save plot of rewards
+                plot('ppo',scores)
+                # save scores
+                pickle.dump(scores, open('ppo_scores.p', 'wb'))
+                # save policy
+                agent.save_weights(path)
+                break
     return total_rewards
