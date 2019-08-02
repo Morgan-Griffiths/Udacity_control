@@ -66,12 +66,19 @@ class Policy(nn.Module):
             self.hidden_layers.append(hidden_layer)
         self.actor_output = nn.Linear(hidden_dims[-1],nA)
         self.critic_output = nn.Linear(hidden_dims[-1],1)
+        # self.reset_parameters()
+
+    def reset_parameters(self):
+        self.input_layer.weight.data.uniform_(*hidden_init(self.input_layer))
+        for hidden_layer in self.hidden_layers:
+            hidden_layer.weight.data.uniform_(*hidden_init(hidden_layer))
+        self.critic_output.weight.data.uniform_(-3e-3,3e-3)
             
     def forward(self,state,action=None):
         x = state
         if not isinstance(state,torch.Tensor):
             x = torch.tensor(x,dtype=torch.float32,device = self.device)
-            x = x.unsqueeze(0)
+            # x = x.unsqueeze(0)
         x = F.relu(self.input_layer(x))
         for hidden_layer in self.hidden_layers:
             x = F.relu(hidden_layer(x))
@@ -83,7 +90,7 @@ class Policy(nn.Module):
             action = dist.sample()
         log_prob = dist.log_prob(action)
 
-        # state value
+        # Critic state value
         v = self.critic_output(x)
         return action, log_prob, dist.entropy(), v
     
