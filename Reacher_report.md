@@ -44,7 +44,10 @@ I also tried training with AdamHD, which sped up initial training significantly 
 Without advantages the agent solved Reacher in 1630-3k steps.
 With advantages the agent solved Reacher in 1560 steps.
 
+*Solving the Environment with advantages*
 ![Graph](/PPO_performance_advantages.png)
+
+*Solving the Environment with returns*
 ![Graph](/PPO_performance_returns.png)
 
 **batch non-continuity**
