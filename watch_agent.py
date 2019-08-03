@@ -7,7 +7,7 @@ from Agents.reinforce import REINFORCE
 from train_ppo import train
 from plot import plot
 
-def main():
+def main(path='model_checkpoints'):
     seed = 1234
     env = UnityEnv(env_file='Environments/Reacher_Linux_20/Reacher.x86_64',no_graphics=False)
 
@@ -28,11 +28,14 @@ def main():
     rewards = []
     
     state = env.reset()
-    for i in range(320):
+    for i in range(4000):
         action,_,_,_ = agent.policy(state)
-        next_state,reward,done = env.step(action)
-
+        next_state,reward,done = env.step(action.cpu().numpy())
+        # print(next_state,reward,done)
         state = next_state
-        rewards.append(np.mean(rewards))
+        rewards.append(np.sum(rewards))
     env.close()
     print("The agent achieved an average score of {:.2f}".format(np.mean(rewards)))
+
+if __name__ == "__main__":
+    main()
