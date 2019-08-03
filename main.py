@@ -24,6 +24,7 @@ L2 = 0.01
 N_STEP = 0.95
 UPDATE_EVERY = 4
 CLIP_NORM = 10
+
 discount_rate = .995
 ppo_epsilon = 0.1
 ppo_beta = .01
@@ -50,17 +51,15 @@ def main(algo):
     
     if algo == "DDPG":
         agent = DDPG(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
-        scores = train(agent,env,UPDATE_EVERY)
+        train(agent,env,UPDATE_EVERY)
     elif algo == 'PPO':
         agent = PPO(env,action_size,state_size,seed)
-        scores = train(agent,EPISODES,path)
+        train(agent,EPISODES,path)
     else:
         agent = REINFORCE(env,action_size,state_size,seed)
-        scores = agent.train()
-    return scores
+        agent.train()
 
 if __name__ == "__main__":
     algo = 'PPO'
-    scores = main(algo)
-    plot(algo,scores)
+    main(algo)
     
