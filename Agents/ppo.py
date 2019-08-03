@@ -5,19 +5,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from collections import namedtuple
+import os
 
 # from noise import initialize_N
+from Adam_HD import AdamHD
 from Networks.models import Policy
 from unity_env import UnityEnv
 import torch.optim as optim
 
 class PPO(object):
-    def __init__(self,env,nA,nS,seed,trace_decay=0.95,num_agents=20,batch_size=32,gradient_clip=10,SGD_epoch=10,tmax = 320, epsilon=0.2, beta=0.01,gamma=0.99):
+    def __init__(self,env,nA,nS,seed,gae_lambda=0.95,num_agents=20,batch_size=32,gradient_clip=10,SGD_epoch=10,tmax = 320, epsilon=0.2, beta=0.01,gamma=0.99):
         self.seed = seed
         self.env = env
         self.nA = nA
         self.nS = nS
-        self.trace_decay = trace_decay
+        self.gae_lambda = gae_lambda
         self.num_agents = num_agents
         self.batch_size= int(batch_size * num_agents)
         self.tmax = tmax
@@ -36,6 +38,7 @@ class PPO(object):
 
         self.policy = Policy(self.device,seed,nS,nA).to(self.device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr = 1e-4)
+        # self.optimizer = AdamHD(self.policy.parameters(), lr = 1e-4)
 
     def load_weights(self,path):
         self.policy.load_state_dict(torch.load(path))
@@ -45,7 +48,7 @@ class PPO(object):
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.mkdir(directory)
-        torch.save(agent.policy.state_dict(), path)
+        torch.save(self.policy.state_dict(), path)
 
     def reset_hyperparams(self):
         self.discount = self.start_discount
@@ -96,11 +99,12 @@ class PPO(object):
         N = len(values)
         A = self.num_agents
         self.policy.eval()
+        # Get values and next_values in the same shape to quickly calculate TD_errors
         with torch.no_grad():
             next_value = self.policy(last_state)[-1].cpu().squeeze(-1)
         self.policy.train()
         next_values = values[1:] + [next_value]
-        combined = self.gamma * self.trace_decay
+        combined = self.gamma * self.gae_lambda
 
         rewards = np.concatenate(rewards).reshape(N,A)
         next_values = np.concatenate(next_values).reshape(N,A)
@@ -115,7 +119,7 @@ class PPO(object):
             P = N-index
             discounts = combined ** np.arange(0,N-index)
             returns[index,:] = np.sum(rewards[index:,:] * np.repeat([discounted_gamma[:j]],A,axis=1).reshape(P,A),axis=0)
-            advs[index,:] = np.sum(TD_errors[index,:] * np.repeat([discounts],A,axis=1).reshape(P,A),axis=0)
+            advs[index,:] = np.sum(TD_errors[index:,:] * np.repeat([discounts],A,axis=1).reshape(P,A),axis=0)
             j += 1
         # Normalize and reshape
         returns = torch.from_numpy(returns.reshape(N*A,1)).float().to(self.device)
@@ -142,7 +146,7 @@ class PPO(object):
                 values_b = values[start:end]
                 returns_b = returns[start:end]
                 advantages_b = advantages[start:end]
-                # for training on random batches
+                # for training on random batches (minibatches must be modified)
                 # states_b = states[indicies]
                 # actions_b = actions[indicies]
                 # log_probs_b = log_probs[indicies]
@@ -150,14 +154,15 @@ class PPO(object):
                 # returns_b = returns[indicies]
                 # advantages_b = advantages[indicies]
 
+                # get new probabilities with grad to perform the update step
+                # Calculate the ratio between old and new log probs. Get loss and update grads
                 _,new_log_probs,entropy,new_values = self.policy(states_b,actions_b)
 
                 ratio = (new_log_probs - log_probs_b).exp()
                 # ratio = new_log_probs / log_probs_b
 
                 clip = torch.clamp(ratio,1-self.epsilon,1+self.epsilon)
-                # clipped_surrogate = torch.min(ratio*advantages_b, clip*advantages_b)
-                clipped_surrogate = torch.min(ratio*returns_b, clip*returns_b)
+                clipped_surrogate = torch.min(ratio*advantages_b, clip*advantages_b)
 
 
                 actor_loss = -torch.mean(clipped_surrogate) - self.beta * entropy.mean()
