@@ -66,7 +66,7 @@ class Policy(nn.Module):
             self.hidden_layers.append(hidden_layer)
         self.actor_output = nn.Linear(hidden_dims[-1],nA)
         self.critic_output = nn.Linear(hidden_dims[-1],1)
-        # self.reset_parameters()
+        self.reset_parameters()
 
     def reset_parameters(self):
         self.input_layer.weight.data.uniform_(*hidden_init(self.input_layer))
