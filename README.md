@@ -6,7 +6,7 @@ Submission for completing the Udacity Project
 
 PPO
 
-- Generalized Advantage Estimation (GAE)
+- GAE returns
 - Network - shared torso, dual head.
 
 ## There are two Environments:
@@ -21,6 +21,8 @@ There are two types of Reacher environments. One with a single agent, and one wi
 - Action space (Continuous) = Array of size (4), each action between -1,1
 
 ---
+
+Optional environment
 
 Crawler:
 
@@ -53,13 +55,6 @@ git clone git@github.com:MorGriffiths/Udacity_Navigation.git
 cd Udacity_Navigation
 ```
 
-Create a virtual environment and activate it.
-
-```
-python -m venv banana
-source banana/bin/activate
-```
-
 Install Unity ml-agents.
 
 ```
@@ -67,6 +62,25 @@ git clone https://github.com/Unity-Technologies/ml-agents.git
 git -C ml-agents checkout 0.4.0b
 pip install ml-agents/python/.
 ```
+
+install anaconda
+
+install the anaconda environment from the conda_requirements.txt file
+
+```
+conda create --name Reacher --file conda_requirements.txt
+```
+
+depending on which version of anaconda you have
+
+```
+conda activate Reacher
+```
+or 
+```
+source activate Reacher
+```
+
 
 ## Download the Reacher Unity Environment which matches your operating system
 
@@ -90,7 +104,7 @@ If necessary, inside main.py, change the path to the unity environment appropria
 
 ### Agents
 
-PPO, The following are either unfinished or are in need of learning help (D4PG,DDPG,REINFORCE)
+PPO, The rest are either unfinished or are in need of learning help (D4PG,DDPG,REINFORCE)
 
 ### Buffers
 
@@ -100,19 +114,24 @@ ReplayBuffer, PriorityReplayBuffer (Uses Priority tree)
 
 Policy (PPO), Actor/Critic (DDPG), ReinforcePolicy (REINFORCE)
 
-### Main files
+### Agent weights
 
-main.py
-checkpoint.pth
-
+model_checkpoints/ppo_checkpoint.pth
 
 ## Run the project
 
 Make sure the env path is set correctly in the main.py file and run
+
 ```
 python main.py
 ```
 
+Every 10 episodes the performance plot is updated "PPO_performance.png" so you can watch how the agent performs along with the readouts from the terminal
+
 ## Watch a trained agent
 
-load the model checkpoint from model_checkpoints
+On Ubuntu this results in a laughably tiny window. Haven't dug into why this isn't working very well.
+
+```
+python watch_agent.py
+```
