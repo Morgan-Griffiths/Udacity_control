@@ -61,8 +61,8 @@ class PPO(object):
     
     def step(self):
         states,next_states,actions,log_probs,dones,values,rewards,episode_score = self.collect_trajectories()
-        advantages,rewards,returns,values = self.return_advs(values,dones,next_states[-1],rewards)
-        self.learn_good(states,next_states,actions,log_probs,dones,values,returns,advantages)
+        advantages,rewards,returns = self.return_advs(values,dones,next_states[-1],rewards)
+        self.learn_good(states,next_states,actions,log_probs,dones,returns,advantages)
         scores = np.sum(np.concatenate(episode_score).reshape(len(states),self.num_agents),axis=1)
         return scores
 
@@ -125,15 +125,15 @@ class PPO(object):
         returns = torch.from_numpy(returns.reshape(N*A,1)).float().to(self.device)
         advs = torch.from_numpy(advs.reshape(N*A,1)).float().to(self.device)
         advs = (advs - advs.mean()) / advs.std()
-        return advs,rewards,returns,values
+        return advs,rewards,returns
 
-    def learn_good(self,states,next_states,actions,log_probs,dones,values,returns,advantages):
+    def learn_good(self,states,next_states,actions,log_probs,dones,returns,advantages):
         # reshape so that memory is shared
         N = len(states)*self.num_agents
         states = torch.from_numpy(np.vstack(states).reshape(N,33)).float().to(self.device)
         actions = torch.from_numpy(np.vstack(actions).reshape(N,4)).float().to(self.device)
         log_probs = torch.from_numpy(np.vstack(log_probs).reshape(N,4)).float().to(self.device)
-        values = torch.from_numpy((values).reshape(N,1)).float().to(self.device)
+        # values = torch.from_numpy((values).reshape(N,1)).float().to(self.device)
         # do multiple training runs on the data
         for _ in range(self.SGD_epoch):
             # Iterate through random batch generator
@@ -143,7 +143,6 @@ class PPO(object):
                 states_b = states[start:end]
                 actions_b = actions[start:end]
                 log_probs_b = log_probs[start:end]
-                values_b = values[start:end]
                 returns_b = returns[start:end]
                 advantages_b = advantages[start:end]
                 # for training on random batches (minibatches must be modified)
