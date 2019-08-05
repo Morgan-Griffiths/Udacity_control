@@ -45,14 +45,14 @@ PPO uses the actor to generate actions in the environment, and store the probabi
 
 2. Calculate future and GAE rewards
 
-After gathering the trajectories, we calculate the discounted future rewards, and Generalized Advantage Estimates (GAE). GAE calculated the cumulative TD error (value of future state + reward - the value of the present state), discounted by gamma*gae_lambda (for more information visit this page [link]https://danieltakeshi.github.io/2017/04/02/notes-on-the-generalized-advantage-estimation-paper/). Those are then passed to the update step, along with the rest of the trajectories gathered. 
+After gathering the trajectories, we calculate the discounted future rewards, and Generalized Advantage Estimates (GAE). GAE calculated the cumulative TD error (value of future state + reward - the value of the present state), discounted by gamma*gae_lambda (for more information visit this page [link](https://danieltakeshi.github.io/2017/04/02/notes-on-the-generalized-advantage-estimation-paper/ "Generalized Advantage Estimation"). Those are then passed to the update step, along with the rest of the trajectories gathered. 
 
 3. The Update:
 
 *The Actor*
 Now we take the old action log probabilities and take e to the difference between the new log probs and the old ones. This means on the first step e^0 = a ratio of 1. And as the log probs diverge over the course of the updates, goes slightly up or down. The size of the ratio is clipped between +/- epsilon (usually ~0.2). Becuase we are training on policy, we must account for the difference between our current network and the previous one which gathered the trajectories, this ratio gives us a way to scale the reward based on the new likelyhood of us choosing the same actions with our current network. So we scale the advantages with the ratio and the clipped ratio, and take the min. 
 
-$$L_{CLIP,\theta_k} (\theta) = E_{\tau~\pi_k} [\Bigsum_{\tau,t=0}[min(r_t(\theta)A_{\pi_k,t},clip(r_t(\theta),1-\epsilon,1+\epsilon)A_{\pi_k,t})]] $$
+$L_{CLIP,\theta_k} (\theta) = E_{\tau~\pi_k} [\Bigsum_{\tau,t=0}[min(r_t(\theta)A_{\pi_k,t},clip(r_t(\theta),1-\epsilon,1+\epsilon)A_{\pi_k,t})]]$
 
 This is our loss. We then perform gradient ascent on the gradient of the loss to update our actor network.
 
