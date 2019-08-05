@@ -15,7 +15,11 @@ The PPO model itself is deceptively simple:
 Repeat steps 1-3
 
 Each episode i collect 20 trajectories of size 320, and then run 10 steps of learning on batches of size 640.
-The agent solved the environment in 1560 episodes. I realize it was supposed to solve it within 100 episodes, but that wasn't well defined to my understanding. I can make it solve it in 1 very long episode, or 100 or 1000. Depending on how many trajectories and learning steps i take. So i ended up leaving the name as episode.
+With a sliding window of 10, The agent solved the environment in 1560 episodes. With a sliding window of 100 the agent solved the env in 1940 episodes. 
+
+![Graph](/PPO_performance_mean100.png)
+
+I realize it was supposed to solve it within 100 episodes, but that wasn't well defined to my understanding. I can make it solve it in 1 very long episode, or 100 or 1000. Depending on how many trajectories and learning steps i take. So i ended up leaving the name as episode. I also skipped adding a dones mask as the episodes never terminate.
 
 However i managed to make it into quite an ordeal!
 
@@ -27,6 +31,29 @@ Initially kept the shapes of the batches as [batch_size,num_agents], however thi
 Strangely i had a hell of a time getting things to learn. I kept running into the same problem where it would appear that everything is fine, but the agent would staunchly refuse to learn. This was the cause of much (so much, oh so much) aggrevation. As debugging RL agents can be really quite difficult. Ultimately i ended up completely reworking calculating the advantages from scratch. As that seemed to be the only possible place where i had screwed things up. In doing so i switched the learning from Advantages to returns which worked well. And then when i reimplimented the GAE function, that worked better. You can clearly see this in the graphs, returns is leveling out, advantages is continuing up in more or less a straight line.
 
 During the course of the agent not learning, i learned a lot about the need to modularize your functions so you can unit test them. And i think going forward i will make sure to build the agents in such a way as to be able to test all the algorithms seperately. And in addition be able to test the network's capability to learn on a simplier environment. This last point seems more difficult as it requires the flexibility to be able to handle many environments. But from my last experience it would have been oh so worth it!
+
+## The Algorithm
+
+**Overview**
+PPO is an online (learns on the current policy) actor+critic method. It gathers trajectories in the environment, stores them and then looks at the rewards it recorded. Based on the rewards it updates the network some number of times to increase the likelyhood of actions that are associated with positive returns, and decrease likelyhood of negative returns. In updating the network, it uses a 'surrogate' objective function that is a pessimistic calculation of the gradient. 
+
+**Details**
+
+1. Gather Trajectories
+
+PPO uses the actor to generate actions in the environment, and store the probability of those actions. Since i'm using a dual head network where the weights are shared, the value of the state is also projected and stored at this time. 
+
+2. Calculate future and GAE rewards
+
+After gathering the trajectories, we calculate the discounted future rewards, and Generalized Advantage Estimates (GAE). GAE calculated the cumulative TD error (value of future state + reward - the value of the present state), discounted by gamma*gae_lambda (for more information visit this page [link]https://danieltakeshi.github.io/2017/04/02/notes-on-the-generalized-advantage-estimation-paper/). Those are then passed to the update step, along with the rest of the trajectories gathered. 
+
+3. The Update - Surrogate loss function:
+
+*The Actor*
+Now we take the old action log probabilities and take e to the difference between the new log probs and the old ones. This means on the first step e^0 = a ratio of 1. And as the log probs diverge over the course of the updates, goes slightly up or down. The size of the ratio is clipped between +/- epsilon (usually ~0.1). Becuase we are training on policy, we must account for the difference between our current network and the previous one which gathered the trajectories, this ratio gives us a way to scale the reward based on the new likelyhood of us choosing the same actions with our current network. So we scale the advantages with the ratio and the clipped ratio, and take the min. This is our surrogate loss. We then perform gradient ascent on the gradient of the loss to update our actor network.
+
+*The Critic*
+The critic loss is simply the Mean Squared Error (MSE) of the discounted future rewards and the projected values. And the network is updated according to the gradient of that loss. In the current case, i'm using the pytorch.smoothL1loss, which means MSE for loss under 1 and otherwise L1. Which penalizes large weights, thus encouraging the updates to be small. Which is necessary to maintain the continuity between past and present networks, otherwise things can spiral out of control.
 
 ## Questions
 
@@ -59,6 +86,8 @@ I experimented with non-continuity in the batches. So instead of getting a seque
 I tried using the ddpg weight initialization, because while extensively debugging the program i noticed that the state value outputs were often quite large (either pos or neg). And given that the rewards are quite small (0.1), it will usually be way off on the value function. So i thought it might make sense to initialize the network with very small weights to cap the value projections. This changed the initial projected state values from +/-3 to 6 to +/-0.1. This seemed to materially effect the speed of convergence, although to accurately get the true signal i would have to run more experiments. In the same vein i thought about scaling the reward which i mention down below in Future Work.
 
 ## Hyperparams:
+
+Hyperparams are all loaded from the config.py file
 
 Parameter | Value | Description
 ------------ | ------------- | -------------
