@@ -9,7 +9,7 @@ def train(agent,episodes,path):
     tic = time.time()
     means = []
     stds = []
-    rewards_sum = deque(maxlen=10)
+    rewards_sum = deque(maxlen=100)
     for i_episode in range(1,episodes):#,episodes+1):
         # get trajectories
         rewards = agent.step()
