@@ -52,7 +52,7 @@ After gathering the trajectories, we calculate the discounted future rewards, an
 *The Actor*
 Now we take the old action log probabilities and take e to the difference between the new log probs and the old ones. This means on the first step e^0 = a ratio of 1. And as the log probs diverge over the course of the updates, goes slightly up or down. The size of the ratio is clipped between +/- epsilon (usually ~0.2). Becuase we are training on policy, we must account for the difference between our current network and the previous one which gathered the trajectories, this ratio gives us a way to scale the reward based on the new likelyhood of us choosing the same actions with our current network. So we scale the advantages with the ratio and the clipped ratio, and take the min. 
 
-$\displaystyle L_{\theta_k}^{CLIP} (\theta) = E_{\tau~\pi_k} [\sum_{t=0}^{\tau}[min(r_t(\theta)A_{t}^{\pi_k},clip(r_t(\theta),1-\epsilon,1+\epsilon)A_{t}^{\pi_k})]]$
+\[L_{\theta_k}^{CLIP} (\theta) = E_{\tau~\pi_k} [\sum_{t=0}^{\tau}[min(r_t(\theta)A_{t}^{\pi_k},clip(r_t(\theta),1-\epsilon,1+\epsilon)A_{t}^{\pi_k})]]\]
 
 This is our loss. We then perform gradient ascent on the gradient of the loss to update our actor network.
 
