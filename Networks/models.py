@@ -141,7 +141,7 @@ class Critic(nn.Module):
         # x = torch.cat((xs,action),dim=1)
         # x = self.fc1_bn(F.relu(self.fc1(x)))
         xs = F.relu(self.input_layer(state))
-        x = torch.cat((xs,action),dim=1)
+        x = torch.cat((xs,action),dim=-1)
         for hidden_layer in self.hidden_layers:
             x = F.relu(hidden_layer(x))
         return self.output_layer(x)
@@ -153,6 +153,7 @@ class Actor(nn.Module):
         self.seed = torch.manual_seed(seed)
         self.nS = nS
         self.nA = nA
+        self.std = nn.Parameter(torch.zeros(1, nA))
 
         self.input_layer = nn.Linear(nS,hidden_dims[0])
         self.fc1 = nn.Linear(hidden_dims[0],hidden_dims[1])
@@ -165,6 +166,14 @@ class Actor(nn.Module):
         self.output_layer.weight.data.uniform_(-3e-3,3e-3)
         
     def forward(self,state):
-        x = F.relu(self.input_layer(state))
+        x = state
+        if not isinstance(state,torch.Tensor):
+            x = torch.tensor(x,dtype=torch.float32) #device = self.device,
+            x = x.unsqueeze(0)
+        x = F.relu(self.input_layer(x))
         x = F.relu(self.fc1(x))
-        return torch.tanh(self.output_layer(x))
+        mean = torch.tanh(self.output_layer(x))
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        action = dist.sample()
+        log_prob = dist.log_prob(action)
+        return action
