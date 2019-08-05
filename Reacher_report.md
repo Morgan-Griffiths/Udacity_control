@@ -50,11 +50,7 @@ After gathering the trajectories, we calculate the discounted future rewards, an
 3. The Update:
 
 *The Actor*
-Now we take the old action log probabilities and take e to the difference between the new log probs and the old ones. This means on the first step e^0 = a ratio of 1. And as the log probs diverge over the course of the updates, goes slightly up or down. The size of the ratio is clipped between +/- epsilon (usually ~0.2). Becuase we are training on policy, we must account for the difference between our current network and the previous one which gathered the trajectories, this ratio gives us a way to scale the reward based on the new likelyhood of us choosing the same actions with our current network. So we scale the advantages with the ratio and the clipped ratio, and take the min. 
-
-\[L_{\theta_k}^{CLIP} (\theta) = E_{\tau~\pi_k} [\sum_{t=0}^{\tau}[min(r_t(\theta)A_{t}^{\pi_k},clip(r_t(\theta),1-\epsilon,1+\epsilon)A_{t}^{\pi_k})]]\]
-
-This is our loss. We then perform gradient ascent on the gradient of the loss to update our actor network.
+Now we take the old action log probabilities and take e to the difference between the new log probs and the old ones. This means on the first step e^0 = a ratio of 1. And as the log probs diverge over the course of the updates, goes slightly up or down. The size of the ratio is clipped between +/- epsilon (usually ~0.2). Becuase we are training on policy, we must account for the difference between our current network and the previous one which gathered the trajectories, this ratio gives us a way to scale the reward based on the new likelyhood of us choosing the same actions with our current network. So we scale the advantages with the ratio and the clipped ratio, and take the min. This is our loss. We then perform gradient ascent on the gradient of the loss to update our actor network.
 
 *The Critic*
 The critic loss is simply the Mean Squared Error (MSE) of the discounted future rewards and the projected values. And the network is updated according to the gradient of that loss. In the current case, i'm using the pytorch.smoothL1loss, which means MSE for loss under 1 and otherwise L1. Which penalizes large weights, thus encouraging the updates to be small. Which is necessary to maintain the continuity between past and present networks, otherwise things can spiral out of control.
