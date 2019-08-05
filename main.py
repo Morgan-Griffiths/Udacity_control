@@ -5,6 +5,7 @@ import numpy as np
 from Agents.ddpg import DDPG
 from Agents.ppo import PPO
 from Agents.reinforce import REINFORCE
+from config import Config
 from train_ppo import train
 from plot import plot
 
@@ -49,11 +50,13 @@ def main(algo):
     state_size = env.state_size
     print('Size of each action: {}, Size of the state space {}'.format(action_size,state_size))
     
+    ppo_config = Config()
+    
     if algo == "DDPG":
         agent = DDPG(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
         train(agent,env,UPDATE_EVERY)
     elif algo == 'PPO':
-        agent = PPO(env,action_size,state_size,seed)
+        agent = PPO(env,action_size,state_size,seed,ppo_config)
         train(agent,EPISODES,path)
     else:
         agent = REINFORCE(env,action_size,state_size,seed)
