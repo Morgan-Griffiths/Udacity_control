@@ -14,25 +14,27 @@ from unity_env import UnityEnv
 import torch.optim as optim
 
 class PPO(object):
-    def __init__(self,env,nA,nS,seed,gae_lambda=0.95,num_agents=20,batch_size=32,gradient_clip=10,SGD_epoch=10,tmax = 320, epsilon=0.2, beta=0.01,gamma=0.99):
+    def __init__(self,env,nA,nS,seed,config):
         self.seed = seed
         self.env = env
         self.nA = nA
         self.nS = nS
-        self.gae_lambda = gae_lambda
-        self.num_agents = num_agents
-        self.batch_size= int(batch_size * num_agents)
-        self.tmax = tmax
-        self.start_epsilon = self.epsilon = epsilon
-        self.start_beta = self.beta = beta
-        self.gamma = gamma
-        self.gradient_clip = gradient_clip
-        self.SGD_epoch = SGD_epoch
-        self.trajectory = namedtuple('trajectory', field_names=('state','next_state','action','log_prob','value','done'))
+        self.gae_lambda = config.gae_lambda
+        self.num_agents = config.num_agents
+        self.batch_size= int(config.batch_size * self.num_agents)
+        self.tmax = config.tmax
+        self.start_epsilon = self.epsilon = config.epsilon
+        self.start_beta = self.beta = config.beta
+        self.gamma = config.gamma
+        self.gradient_clip = config.gradient_clip
+        self.SGD_epoch = config.SGD_epoch
         
         if torch.cuda.is_available():
-            self.device = torch.device("cuda:1")
-            self.device2 = torch.device("cuda:0")
+            try:
+                self.device = torch.device("cuda:1")
+                self.device2 = torch.device("cuda:0")
+            except:
+                self.device = torch.device("cuda:0")
         else:
             self.device = torch.device('cpu')
 
