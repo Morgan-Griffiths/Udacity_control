@@ -47,10 +47,14 @@ PPO uses the actor to generate actions in the environment, and store the probabi
 
 After gathering the trajectories, we calculate the discounted future rewards, and Generalized Advantage Estimates (GAE). GAE calculated the cumulative TD error (value of future state + reward - the value of the present state), discounted by gamma*gae_lambda (for more information visit this page [link]https://danieltakeshi.github.io/2017/04/02/notes-on-the-generalized-advantage-estimation-paper/). Those are then passed to the update step, along with the rest of the trajectories gathered. 
 
-3. The Update - Surrogate loss function:
+3. The Update:
 
 *The Actor*
-Now we take the old action log probabilities and take e to the difference between the new log probs and the old ones. This means on the first step e^0 = a ratio of 1. And as the log probs diverge over the course of the updates, goes slightly up or down. The size of the ratio is clipped between +/- epsilon (usually ~0.1). Becuase we are training on policy, we must account for the difference between our current network and the previous one which gathered the trajectories, this ratio gives us a way to scale the reward based on the new likelyhood of us choosing the same actions with our current network. So we scale the advantages with the ratio and the clipped ratio, and take the min. This is our surrogate loss. We then perform gradient ascent on the gradient of the loss to update our actor network.
+Now we take the old action log probabilities and take e to the difference between the new log probs and the old ones. This means on the first step e^0 = a ratio of 1. And as the log probs diverge over the course of the updates, goes slightly up or down. The size of the ratio is clipped between +/- epsilon (usually ~0.2). Becuase we are training on policy, we must account for the difference between our current network and the previous one which gathered the trajectories, this ratio gives us a way to scale the reward based on the new likelyhood of us choosing the same actions with our current network. So we scale the advantages with the ratio and the clipped ratio, and take the min. 
+
+$$L_{CLIP,\theta_k} (\theta) = E_{\tau~\pi_k} [\Bigsum_{\tau,t=0}[min(r_t(\theta)A_{\pi_k,t},clip(r_t(\theta),1-\epsilon,1+\epsilon)A_{\pi_k,t})]] $$
+
+This is our loss. We then perform gradient ascent on the gradient of the loss to update our actor network.
 
 *The Critic*
 The critic loss is simply the Mean Squared Error (MSE) of the discounted future rewards and the projected values. And the network is updated according to the gradient of that loss. In the current case, i'm using the pytorch.smoothL1loss, which means MSE for loss under 1 and otherwise L1. Which penalizes large weights, thus encouraging the updates to be small. Which is necessary to maintain the continuity between past and present networks, otherwise things can spiral out of control.
@@ -58,9 +62,8 @@ The critic loss is simply the Mean Squared Error (MSE) of the discounted future 
 ## Questions
 
 1. There also technically should be the VF coefficient for when you use a dual head network. However it seems to train fine without?
-2. Why does the squared difference also work for the PPO action log prob ratio, instead of division?
-3. Its also a little unclear why normalizing the rewards helps. When combined with future rewards, this makes the beginning rewards negative and later rewards positive. Which seems like it should result in destablizing the learning algorithm since the beginning actions will always be penalized (and the reverse for later actions).
-4. Also there is no gif of the agent because the watch_agent doesn't work well for some reason (i'm on Ubuntu 18.04 which might be the issue) and results in a laughably small screen which cannot be resized(???).
+2. Its also a little unclear why normalizing the rewards helps. When combined with future rewards, this makes the beginning rewards negative and later rewards positive. Which seems like it should result in destablizing the learning algorithm since the beginning actions will always be penalized (and the reverse for later actions).
+3. Also there is no gif of the agent because the watch_agent doesn't work well for some reason (i'm on Ubuntu 18.04 which might be the issue) and results in a laughably small screen which cannot be resized(???).
 
 ## Experiments:
 
