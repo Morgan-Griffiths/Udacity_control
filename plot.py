@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 from scipy.interpolate import make_interp_spline, BSpline
 
-def plot(means,stds):
+def plot(name,means,stds):
      
     length = len(means)
     means = np.array(means)
@@ -26,7 +26,7 @@ def plot(means,stds):
 
     _, ax = plt.subplots()
 
-    title = "PPO performance on Reacher with 20 agents"
+    title = str(name)+" performance on Reacher with 20 agents"
     x_label = "Number of Episodes"
     y_label = "Score"
 
@@ -37,11 +37,9 @@ def plot(means,stds):
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     # plt.show()
-    plt.savefig('PPO_performance.png',bbox_inches='tight')
+    plt.savefig(str(name)+'_performance.png',bbox_inches='tight')
     plt.close()
 
 if __name__ == "__main__":
     means, stds = pickle.load(open('ppo_scores.p', 'rb'))
-    # stds = np.array([1,1.5,2,1.5])
-    # means = np.array([4,5,3.5,7])
     plot(means,stds)
