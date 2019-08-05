@@ -6,7 +6,8 @@ from Agents.ddpg import DDPG
 from Agents.ppo import PPO
 from Agents.reinforce import REINFORCE
 from config import Config
-from train_ppo import train
+from train_ppo import train_ppo
+from train_ddpg import train_ddpg
 from plot import plot
 
 BUFFER_SIZE = 10000
@@ -23,7 +24,7 @@ GAMMA = 0.99
 TAU = 0.001
 L2 = 0.01
 N_STEP = 0.95
-UPDATE_EVERY = 4
+UPDATE_EVERY = 10
 CLIP_NORM = 10
 
 discount_rate = .995
@@ -50,14 +51,14 @@ def main(algo):
     state_size = env.state_size
     print('Size of each action: {}, Size of the state space {}'.format(action_size,state_size))
     
-    ppo_config = Config()
+    config = Config(algo)
     
     if algo == "DDPG":
-        agent = DDPG(action_size,state_size,BUFFER_SIZE,MIN_BUFFER_SIZE,BATCH_SIZE,seed,L2,TAU,GAMMA,N_STEP)
-        train(agent,env,UPDATE_EVERY)
+        agent = DDPG(seed,action_size,state_size,config)
+        train_ddpg(agent,env,UPDATE_EVERY)
     elif algo == 'PPO':
-        agent = PPO(env,action_size,state_size,seed,ppo_config)
-        train(agent,EPISODES,path)
+        agent = PPO(env,action_size,state_size,seed,config)
+        train_ppo(agent,EPISODES,path)
     else:
         agent = REINFORCE(env,action_size,state_size,seed)
         agent.train()
