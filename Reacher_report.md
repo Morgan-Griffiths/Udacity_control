@@ -18,7 +18,7 @@ With a sliding window of 10, The agent solved the environment in 1560 episodes. 
 
 ![Graph](/PPO_performance_mean100.png)
 
-I realize it was supposed to solve it within 100 episodes, but that wasn't well defined to my understanding. I can make it solve it in 1 very long episode, or 100 or 1000. Depending on how many trajectories and learning steps i take. So i ended up leaving the name as episode. I also skipped adding a dones mask as the episodes never terminate.
+I also skipped adding a dones mask as the episodes never terminate.
 
 However i managed to make it into quite an ordeal!
 
